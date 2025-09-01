@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gulf Harbors Yacht Club - Complete Management System (DRAG FIXED)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Hide all screens initially */
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* Dashboard Styles */
+        .option-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .option-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .yacht-header {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+        }
+        
+        .animated-icon {
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        /* Seating Manager Styles */
+        .table-item {
+            position: absolute;
+            border: 2px solid #1e40af;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #1e40af;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: move;
+            transition: all 0.2s ease;
+            border-radius: 50%;
+            user-select: none;
+        }
+        
+        .table-item.dragging {
+            z-index: 1000;
+            opacity: 0.8;
+            transform: scale(1.1);
+        }
+        
+        .table-rectangular {
+            border-radius: 8px;
+        }
+        
+        .table-rotation-handle {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .table-resize-handle {
+            position: absolute;
+            bottom: -8px;
+            right: -8px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .table-delete-handle {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .table-item:hover .table-rotation-handle,
+        .table-item:hover .table-resize-handle,
+        .table-item:hover .table-delete-handle {
+            display: flex;
+        }
+
+        .room-layout {
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAHCAAACowCAIAAAAw79/mAAEAAElEQVR42uzcAQ0AIADDMMC/56NjSSthAna3HQAAAAAAAAAAAAAAAAAAAAAAAAAAoOlJAAAAAAAAAAAAAAAAAAAAAAAAAAAAXQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEGYwCgAAAAAAAAAAAAAAAAAAAAAAAAAAYQajAAAAAAAAAAAAAAAAAAAAAAAAAAAQZjAKAAAAAAAAAAAAAAAAAAAAAAAAAABhBqMAAAAAAAAAAAAAAAAAAAAAAAAAABBmMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGEGowAAAAAAAAAAAAAAAAAAAAAAAAAAEMax0/2+dOyABAAAAEPT/dTsCHSIAAAAAAAAAAAAAAAAAAAAAAAAAAIwJRgEAAAAAAAAAAAAAAAAAAAAAAAAAYEwwCgAAAAAAAAAAAAAAAAAAAAAAAAAAY4JRAAAAAAAAAAAAAAAAAAAAAAAAAAAYE4wCAAAAAAAAAAAAAAAAAAAAAAAAAMCYYBQAAAAAAAAAAAAAAAAAAAAAAAAAAMYEowAAAAAAAAAAAAAAAAAAAAAAAAAAMCYYBQAAAAAAAAAAAAAAAAAAAAAAAACAMcEoAAAAAAAAAAAAAAAAAAAAAAAAAACMCUYBAAAAAAAAAAAAAAAAAAAAAAAAAGBMMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGOCUQAAAAAAAAAAAAAAAAAAAAAAAAAAGBOMAgAAAAAAAAAAAAAAAAAAAAAAAADAmGAUAAAAAAAAAAAAAAAAAAAAAAAAAADGBKMAAAAAAAAAAAAAAAAAAAAAAAAAADAmGAUAAAAAAAAAAAAAAAAAAAAAAAAAgDHBKAAAAAAAAAAAAAAAAAAAAAAAAAAAjAlGAQAAAAAAAAAAAAAAAAAAAAAAAABgTDAKAAAAAAAAAAAAAAAAAAAAAAAAAABjglEAAAAAAAAAAAAAAAAAAAAAAAAAABgTjAIAAAAAAAAAAAAAAAAAAAAAAAAAwJhgFAAAAAAAAAAAAAAAAAAAAAAAAAAAxgSjAAAAAAAAAAAAAAAAAAAAAAAAAAAwJhgFAAAAAAAAAAAAAAAAAAAAAAAAAIAxwSgAAAAAAAAAAAAAAAAAAAAAAAAAAIwJRgEAAAAAAAAAAAAAAAAAAAAAAAAAYEwwCgAAAAAAAAAAAAAAAAAAAAAAAAAAY4JRAAAAAAAAAAAAAAAAAAAAAAAAAAAYE4wCAAAAAAAAAAAAAAAAAAAAAAAAAMCYYBQAAAAAAAAAAAAAAAAAAAAAAAAAAMYEowAAAAAAAAAAAAAAAAAAAAAAAAAAMCYYBQAAAAAAAAAAAAAAAAAAAAAAAACAMcEoAAAAAAAAAAAAAAAAAAAAAAAAAACMCUYBAAAAAAAAAAAAAAAAAAAAAAAAAGBMMAoAAAAAAAAAAAAAAAAAAAAAAAAAAGOCUQAAAAAAAAAAAAAAAAAAAAAAAAAAGBOMAgAAAAAAAAAAAAAAAAAAAAAAAADAmGAUAAAAAAAAAAAAAAAAAAAAAAAAAADGBKMAAAAAAAAAAAAAAAAAAAAAAAAAADAmGAUAAAAAAAAAAAAAAAAAAAAAAAAAgDHBKAAAAAAAAAAAAAAAAAAAAAAAAAAAjAlGAQAAAAAAAAAAAAAAAAAAAAAAAABgTDAKAAAAAAAAAAAAAAAAAAAAAAAAAABjglEAAAAAAAAAAAAAAAAAAAAAAAAAABgTjAIAAAAAAAAAAAAAAAAAAAAAAAAAwJhgFAAAAAAAAAAAAAAAAAAAAAAAAAAAxgSjAAAAAAAAAAAAAAAAAAAAAAAAAAAwJhgFAAAAAAAAAAAAAAAAAAAAAAAAAIAxwSgAAAAAAAAAAAAAAAAAAAAAAAAAAIwJRgEAAAAAAAAAAAAAAAAAAAAAAAAAYEwwCgAAAAAAAAAAAAAAAAAAAAAAAAAAY4JRAAAAAAAAAAAAAAAAAAAAAAAAAAAYE4wCAAAAAAAAAAAAAACAAAAASUVORK5CYII=');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border: 3px solid #0369a1;
+            position: relative;
+            margin: 0 auto;
+            width: 800px;
+            height: 600px;
+            min-height: 600px;
+        }
+
+        .mode-selector {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .mode-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 8px 0;
+        }
+        
+        .mode-option.selected {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #ffffff;
+        }
+
+        .party-item {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 8px;
+            margin: 4px 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .party-item.assigned {
+            background: #dcfce7;
+            border-color: #22c55e;
+        }
+        
+        .party-item.selected {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            border-width: 2px;
+        }
+
+        .nautical-border {
+            border: 3px solid #1e40af;
+            border-radius: 12px;
+            background: white;
+        }
+
+        /* Training Styles */
+        .slide {
+            display: none;
+        }
+        
+        .slide.active {
+            display: block;
+        }
+        
+        .slide-header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 12px 12px 0 0;
+        }
+
+        /* Action History Styles */
+        .action-history {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body class="bg-blue-50 min-h-screen">
+
+    <!-- Navigation Bar -->
+    <div class="yacht-header text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <i class="fas fa-anchor text-2xl mr-3"></i>
+                <span class="text-xl font-bold">Gulf Harbors Yacht Club</span>
+            </div>
+            <nav class="space-x-4">
+                <button onclick="showScreen('dashboard')" class="px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </button>
+                <button onclick="showScreen('seating')" class="px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-chair mr-2"></i>Seating Manager
+                </button>
+                <button onclick="showScreen('training')" class="px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-graduation-cap mr-2"></i>Training
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboard" class="screen active">
+        <div class="container mx-auto px-6 py-8">
+            <div class="text-center mb-12">
+                <h1 class="text-5xl font-bold text-blue-800 mb-4">
+                    <i class="fas fa-anchor animated-icon mr-4"></i>
+                    Gulf Harbors Yacht Club
+                </h1>
+                <h2 class="text-2xl text-gray-600 mb-6">Professional Event Management System</h2>
+                <p class="text-lg text-gray-700 max-w-3xl mx-auto">
+                    Welcome to your comprehensive event planning solution. Choose from our three main tools to create, manage, and execute perfect yacht club events.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <!-- Manual Planning -->
+                <div class="option-card bg-white rounded-xl shadow-lg p-8 border-t-4 border-blue-600" onclick="showScreen('seating')">
+                    <div class="text-center">
+                        <div class="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-chair text-3xl text-blue-600"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-blue-800 mb-4">Manual Planning</h3>
+                        <p class="text-gray-600 mb-6">
+                            Full control over your event layout. Drag and drop tables, customize arrangements, and create the perfect seating plan with precision.
+                        </p>
+                        <div class="space-y-2 text-left">
+                            <div class="flex items-center text-sm text-gray-700">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                Drag & drop table placement
+                            </div>
+                            <div class="flex items-center text-sm text-gray-700">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                Manual party assignments
+                            </div>
+                            <div class="flex items-center text-sm text-gray-700">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                Custom table sizing
+                            </div>
+                        </div>
+                        <button class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors mt-6 font-semibold">
+                            Start Planning →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Auto Event Setup -->
+                <div class="option-card bg-white rounded-xl shadow-lg p-8 border-t-4 border-green-600" onclick="showScreen('seating'); toggleToAutoMode();">
+                    <div class="text-center">
+                        <div class="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-magic text-3xl text-green-600"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-green-800 mb-4">Auto Event Setup</h3>
+                        <p class="text-gray-600 mb-6">
+                            Let our AI-powered system handle the complexity. Just input party details and preferences - we'll create the optimal layout automatically.
+                        </p>
+                        <div class="space-y-2 text-left">
+                            <div class="flex items-center text-sm text-gray-700">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                AI-powered table placement
+                            </div>
+                            <div class="flex items-center text-sm text-gray-700">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                Smart party grouping
+                            </div>
+                            <div class="flex items-center text-sm text-gray-700">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                Preference-based seating
+                            </div>
+                        </div>
+                        <button class="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors mt-6 font-semibold">
+                            Auto-Assign →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Training & Help -->
+                <div class="option-card bg-white rounded-xl shadow-lg p-8 border-t-4 border-purple-600" onclick="showScreen('training')">
+                    <div class="text-center">
+                        <div class="bg-purple-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-graduation-cap text-3xl text-purple-600"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-purple-800 mb-4">Training & Help</h3>
+                        <p class="text-gray-600 mb-6">
+                            Comprehensive guides and tutorials to master the system. Perfect for new users or refreshing your knowledge on advanced features.
+                        </p>
+                        <div class="space-y-2 text-left">
+                            <div class="flex items-center text-sm text-gray-700">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                Interactive tutorials
+                            </div>
+                            <div class="flex items-center text-sm text-gray-700">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                Best practices guide
+                            </div>
+                            <div class="flex items-center text-sm text-gray-700">
+                                <i class="fas fa-check text-green-500 mr-2"></i>
+                                Troubleshooting help
+                            </div>
+                        </div>
+                        <button class="w-full bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors mt-6 font-semibold">
+                            Learn More →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seating Manager Screen -->
+    <div id="seating" class="screen">
+        <div class="container mx-auto px-4 py-6">
+            <!-- Mode Selector -->
+            <div class="mode-selector">
+                <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                    <i class="fas fa-magic mr-2"></i>
+                    Choose Your Assignment Mode
+                </h2>
+                
+                <div class="space-y-2">
+                    <label class="mode-option text-white" id="autoModeOption">
+                        <input type="radio" name="assignmentMode" value="auto" checked>
+                        <div>
+                            <div class="font-semibold text-lg">🎯 Auto (Recommended)</div>
+                            <div class="text-sm text-blue-100">AI-powered smart assignment with optimization</div>
+                        </div>
+                    </label>
+                    
+                    <label class="mode-option text-white" id="manualModeOption">
+                        <input type="radio" name="assignmentMode" value="manual">
+                        <div>
+                            <div class="font-semibold text-lg">🎨 Manual (Full control)</div>
+                            <div class="text-sm text-blue-100">Drag-and-drop table creation & assignment</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Left Panel: Party Management -->
+                <div class="lg:col-span-1">
+                    <div class="nautical-border p-4 mb-6">
+                        <h3 class="font-bold text-blue-800 mb-4 flex items-center">
+                            <i class="fas fa-users mr-2"></i>
+                            Add Party
+                        </h3>
+                        
+                        <!-- Manual Mode Table Options -->
+                        <div id="manualTableOptions" class="mt-4 grid grid-cols-2 gap-4" style="display: none;">
+                            <div class="nautical-border p-3">
+                                <h3 class="font-bold text-blue-800 mb-2">Round Tables</h3>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="draggable bg-white border-2 border-blue-600 rounded-full w-12 h-12 flex items-center justify-center font-bold text-blue-600 cursor-pointer hover:bg-blue-50" 
+                                         data-table-type="round" data-seats="4" data-size="48">4</div>
+                                    <div class="draggable bg-white border-2 border-blue-600 rounded-full w-16 h-16 flex items-center justify-center font-bold text-blue-600 cursor-pointer hover:bg-blue-50" 
+                                         data-table-type="round" data-seats="6" data-size="64">6</div>
+                                    <div class="draggable bg-white border-2 border-blue-600 rounded-full w-20 h-20 flex items-center justify-center font-bold text-blue-600 cursor-pointer hover:bg-blue-50" 
+                                         data-table-type="round" data-seats="8" data-size="80">8</div>
+                                    <div class="draggable bg-white border-2 border-blue-600 rounded-full w-24 h-24 flex items-center justify-center font-bold text-blue-600 cursor-pointer hover:bg-blue-50" 
+                                         data-table-type="round" data-seats="10" data-size="96">10</div>
+                                </div>
+                            </div>
+                            
+                            <div class="nautical-border p-3">
+                                <h3 class="font-bold text-blue-800 mb-2">Rectangular Tables</h3>
+                                <div class="grid grid-cols-1 gap-2">
+                                    <div class="draggable bg-white border-2 border-blue-600 rounded w-16 h-8 flex items-center justify-center font-bold text-blue-600 cursor-pointer hover:bg-blue-50" 
+                                         data-table-type="rectangular" data-seats="6" data-size="64x32">6</div>
+                                    <div class="draggable bg-white border-2 border-blue-600 rounded w-20 h-10 flex items-center justify-center font-bold text-blue-600 cursor-pointer hover:bg-blue-50" 
+                                         data-table-type="rectangular" data-seats="8" data-size="80x40">8</div>
+                                    <div class="draggable bg-white border-2 border-blue-600 rounded w-24 h-12 flex items-center justify-center font-bold text-blue-600 cursor-pointer hover:bg-blue-50" 
+                                         data-table-type="rectangular" data-seats="12" data-size="96x48">12</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form onsubmit="addParty(event)" class="space-y-3">
+                            <input type="text" id="memberName" placeholder="Member Name" required class="w-full p-2 border rounded">
+                            <input type="number" id="totalGuests" placeholder="Total Guests" required min="1" class="w-full p-2 border rounded">
+                            <input type="number" id="adults" placeholder="Adults" required min="1" class="w-full p-2 border rounded">
+                            <input type="number" id="children" placeholder="Children" min="0" class="w-full p-2 border rounded">
+                            <input type="number" id="nonMembers" placeholder="Non-Members" min="0" class="w-full p-2 border rounded">
+                            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+                                <i class="fas fa-plus mr-2"></i>Add Party
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Party List -->
+                    <div class="nautical-border p-4 mb-6">
+                        <h3 class="font-bold text-blue-800 mb-4 flex items-center">
+                            <i class="fas fa-list mr-2"></i>
+                            Parties (<span id="partyCount">0 parties</span>)
+                        </h3>
+                        <div id="partyList" class="space-y-2 max-h-64 overflow-y-auto">
+                            <!-- Parties will be listed here -->
+                        </div>
+                    </div>
+
+                    <!-- Action History & Controls -->
+                    <div class="nautical-border p-4 mb-6">
+                        <h3 class="font-bold text-blue-800 mb-4 flex items-center">
+                            <i class="fas fa-history mr-2"></i>
+                            Actions & Controls
+                        </h3>
+                        
+                        <div class="space-y-2">
+                            <button onclick="undoLastAction()" id="undoBtn" class="w-full bg-yellow-600 text-white py-2 px-4 rounded hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                                <i class="fas fa-undo mr-2"></i>Undo Last Action
+                            </button>
+                            
+                            <button onclick="autoAssignParties()" class="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+                                <i class="fas fa-magic mr-2"></i>Auto-Assign All
+                            </button>
+                            
+                            <button onclick="clearAll()" class="w-full bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">
+                                <i class="fas fa-trash mr-2"></i>Clear All
+                            </button>
+                        </div>
+
+                        <div class="action-history mt-4">
+                            <h4 class="font-semibold text-gray-700 mb-2">Recent Actions:</h4>
+                            <div id="actionList" class="text-xs text-gray-600 space-y-1 max-h-20 overflow-y-auto">
+                                <div class="text-gray-400">No actions yet</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Panel: Room Layout -->
+                <div class="lg:col-span-2">
+                    <div class="nautical-border p-4 mb-6">
+                        <h3 class="font-bold text-blue-800 mb-4 flex items-center justify-between">
+                            <span>
+                                <i class="fas fa-map mr-2"></i>
+                                Room Layout - Gulf Harbors Yacht Club
+                            </span>
+                            <div class="text-sm text-gray-600" id="modeIndicator">
+                                Mode: <span class="font-semibold text-blue-600">Auto</span>
+                            </div>
+                        </h3>
+                        <div id="roomLayout" class="room-layout">
+                            <!-- Tables will be placed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Reports & Actions -->
+                <div class="lg:col-span-1">
+                    <div class="nautical-border p-4 mb-6">
+                        <h3 class="font-bold text-blue-800 mb-4 flex items-center">
+                            <i class="fas fa-clipboard-list mr-2"></i>
+                            Reports & Actions
+                        </h3>
+                        
+                        <div class="space-y-3">
+                            <button onclick="generateHostessReport()" class="w-full bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700">
+                                <i class="fas fa-file-alt mr-2"></i>Generate Report
+                            </button>
+                            
+                            <button onclick="printLayout()" class="w-full bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700">
+                                <i class="fas fa-print mr-2"></i>Print Layout  
+                            </button>
+                            
+                            <button onclick="exportData()" class="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700">
+                                <i class="fas fa-download mr-2"></i>Export Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Reference -->
+                    <div class="nautical-border p-4">
+                        <h3 class="font-bold text-blue-800 mb-4">
+                            <i class="fas fa-question-circle mr-2"></i>Quick Reference
+                        </h3>
+                        <div class="text-sm space-y-2">
+                            <div><strong>Manual Mode:</strong></div>
+                            <div class="ml-4 text-gray-600">
+                                • Drag tables from left panel to layout<br>
+                                • Drag existing tables to move them<br>
+                                • Hover for rotate/resize/delete controls<br>
+                                • Click parties to assign to tables
+                            </div>
+                            <div><strong>Auto Mode:</strong></div>
+                            <div class="ml-4 text-gray-600">
+                                • Add parties, then click "Auto-Assign"<br>
+                                • System creates optimal layout<br>
+                                • Switch to Manual for adjustments
+                            </div>
+                            <div><strong>New Features:</strong></div>
+                            <div class="ml-4 text-gray-600">
+                                • <strong>Undo Button:</strong> Reverses last action<br>
+                                • <strong>Action History:</strong> See recent changes<br>
+                                • <strong>Fixed Dragging:</strong> Tables move properly now!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hostess Report Modal -->
+        <div id="hostessReport" class="fixed inset-0 bg-black bg-opacity-50 z-50" style="display: none;">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-bold text-blue-800">
+                                <i class="fas fa-clipboard-list mr-2"></i>
+                                Hostess Report
+                            </h2>
+                            <button onclick="document.getElementById('hostessReport').style.display = 'none'" class="text-gray-600 hover:text-gray-800">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div id="reportContent">
+                            <!-- Report content will be generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Screen -->
+    <div id="training" class="screen">
+        <div class="container mx-auto px-6 py-8">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-8">
+                    <h1 class="text-4xl font-bold text-blue-800 mb-4">
+                        <i class="fas fa-graduation-cap mr-4"></i>
+                        Training & Tutorials
+                    </h1>
+                    <p class="text-lg text-gray-600">
+                        Master the Gulf Harbors Yacht Club seating management system
+                    </p>
+                </div>
+
+                <!-- Training Navigation -->
+                <div class="flex justify-center mb-8 space-x-4">
+                    <button onclick="showSlide(1)" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" id="slide1Btn">Getting Started</button>
+                    <button onclick="showSlide(2)" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400" id="slide2Btn">Manual Mode</button>
+                    <button onclick="showSlide(3)" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400" id="slide3Btn">Auto Mode</button>
+                    <button onclick="showSlide(4)" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400" id="slide4Btn">Advanced Features</button>
+                    <button onclick="showSlide(5)" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400" id="slide5Btn">Troubleshooting</button>
+                </div>
+
+                <!-- Slide 1: Getting Started -->
+                <div id="slide1" class="slide active bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="slide-header">
+                        <h2 class="text-2xl font-bold">Getting Started with the Seating Manager</h2>
+                    </div>
+                    <div class="p-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-800 mb-4">Welcome to Your Event Management Solution</h3>
+                                <p class="text-gray-700 mb-4">
+                                    This system helps you plan perfect yacht club events with both automated and manual seating arrangements.
+                                </p>
+                                <ul class="space-y-2 text-gray-700">
+                                    <li class="flex items-center">
+                                        <i class="fas fa-check text-green-500 mr-2"></i>
+                                        Drag and drop table placement
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-check text-green-500 mr-2"></i>
+                                        AI-powered auto-assignment
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-check text-green-500 mr-2"></i>
+                                        Professional reporting
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-check text-green-500 mr-2"></i>
+                                        Undo/redo functionality
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="bg-blue-50 p-6 rounded-lg">
+                                <h4 class="font-bold text-blue-800 mb-3">Quick Start Steps:</h4>
+                                <ol class="space-y-2 text-gray-700">
+                                    <li><strong>1.</strong> Add parties using the left panel</li>
+                                    <li><strong>2.</strong> Choose Auto or Manual mode</li>
+                                    <li><strong>3.</strong> Create your seating arrangement</li>
+                                    <li><strong>4.</strong> Generate reports for your hostess</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 2: Manual Mode -->
+                <div id="slide2" class="slide bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="slide-header">
+                        <h2 class="text-2xl font-bold">Manual Mode - Full Control</h2>
+                    </div>
+                    <div class="p-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-800 mb-4">Drag & Drop Tables</h3>
+                                <p class="text-gray-700 mb-4">
+                                    In manual mode, you have complete control over table placement and party assignments.
+                                </p>
+                                <ul class="space-y-2 text-gray-700">
+                                    <li class="flex items-center">
+                                        <i class="fas fa-mouse-pointer text-blue-500 mr-2"></i>
+                                        Drag tables from the left panel to the layout
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-arrows-alt text-blue-500 mr-2"></i>
+                                        Move existing tables by dragging them
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-redo text-blue-500 mr-2"></i>
+                                        Hover over tables for rotate/resize/delete controls
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-users text-blue-500 mr-2"></i>
+                                        Click parties to assign them to tables
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="bg-gray-50 p-6 rounded-lg">
+                                <h4 class="font-bold text-blue-800 mb-3">Table Types Available:</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 border-2 border-blue-600 rounded-full bg-white flex items-center justify-center text-xs font-bold mr-3">4</div>
+                                        <span>Round table for 4 guests</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 border-2 border-blue-600 rounded-full bg-white flex items-center justify-center text-xs font-bold mr-3">6</div>
+                                        <span>Round table for 6 guests</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-12 h-6 border-2 border-blue-600 rounded bg-white flex items-center justify-center text-xs font-bold mr-3">8</div>
+                                        <span>Rectangular table for 8 guests</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 3: Auto Mode -->
+                <div id="slide3" class="slide bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="slide-header">
+                        <h2 class="text-2xl font-bold">Auto Mode - AI-Powered Assignment</h2>
+                    </div>
+                    <div class="p-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-800 mb-4">Smart Automation</h3>
+                                <p class="text-gray-700 mb-4">
+                                    Let our AI system create the optimal seating arrangement based on party sizes and preferences.
+                                </p>
+                                <ul class="space-y-2 text-gray-700">
+                                    <li class="flex items-center">
+                                        <i class="fas fa-brain text-green-500 mr-2"></i>
+                                        AI analyzes party sizes and requirements
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-magic text-green-500 mr-2"></i>
+                                        Automatically places tables optimally
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-users-cog text-green-500 mr-2"></i>
+                                        Groups parties efficiently
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-chart-line text-green-500 mr-2"></i>
+                                        Maximizes space utilization
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="bg-green-50 p-6 rounded-lg">
+                                <h4 class="font-bold text-green-800 mb-3">Auto Mode Process:</h4>
+                                <ol class="space-y-2 text-gray-700">
+                                    <li><strong>1.</strong> Add all your parties first</li>
+                                    <li><strong>2.</strong> Click "Auto-Assign All" button</li>
+                                    <li><strong>3.</strong> System creates optimal layout</li>
+                                    <li><strong>4.</strong> Switch to Manual for fine-tuning</li>
+                                </ol>
+                                <div class="mt-4 p-3 bg-yellow-100 rounded border-l-4 border-yellow-500">
+                                    <p class="text-sm text-yellow-800">
+                                        <strong>Tip:</strong> You can always switch to Manual mode after auto-assignment to make adjustments!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 4: Advanced Features -->
+                <div id="slide4" class="slide bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="slide-header">
+                        <h2 class="text-2xl font-bold">Advanced Features & New Updates</h2>
+                    </div>
+                    <div class="p-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-800 mb-4">New! Undo/Redo System</h3>
+                                <p class="text-gray-700 mb-4">
+                                    Never worry about making mistakes! Our new action history system tracks everything.
+                                </p>
+                                <ul class="space-y-2 text-gray-700">
+                                    <li class="flex items-center">
+                                        <i class="fas fa-undo text-yellow-500 mr-2"></i>
+                                        Undo Last Action button
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-history text-yellow-500 mr-2"></i>
+                                        Action history tracking
+                                    </li>
+                                    <li class="flex items-center">
+                                        <i class="fas fa-shield-alt text-yellow-500 mr-2"></i>
+                                        Mistake-proof editing
+                                    </li>
+                                </ul>
+
+                                <h3 class="text-xl font-bold text-blue-800 mb-4 mt-6">Fixed! Drag & Drop</h3>
+                                <p class="text-gray-700 mb-4">
+                                    Tables now move smoothly when you drag them in Manual mode.
+                                </p>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="bg-purple-50 p-6 rounded-lg">
+                                    <h4 class="font-bold text-purple-800 mb-3">Reporting Features:</h4>
+                                    <ul class="space-y-2 text-gray-700">
+                                        <li>• Professional hostess reports</li>
+                                        <li>• Printable layouts</li>
+                                        <li>• Data export capabilities</li>
+                                        <li>• Guest count summaries</li>
+                                    </ul>
+                                </div>
+                                <div class="bg-blue-50 p-6 rounded-lg">
+                                    <h4 class="font-bold text-blue-800 mb-3">Table Management:</h4>
+                                    <ul class="space-y-2 text-gray-700">
+                                        <li>• Hover controls for each table</li>
+                                        <li>• Rotate tables in 45° increments</li>
+                                        <li>• Resize tables dynamically</li>
+                                        <li>• Delete individual tables</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 5: Troubleshooting -->
+                <div id="slide5" class="slide bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="slide-header">
+                        <h2 class="text-2xl font-bold">Troubleshooting & FAQ</h2>
+                    </div>
+                    <div class="p-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-bold text-red-600 mb-4">Common Issues & Solutions</h3>
+                                
+                                <div class="space-y-4">
+                                    <div class="border-l-4 border-red-500 pl-4">
+                                        <h4 class="font-bold text-gray-800">Tables won't move/drag</h4>
+                                        <p class="text-gray-600 text-sm">
+                                            ✅ <strong>Solution:</strong> Switch to Manual mode first! Dragging is disabled in Auto mode.
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="border-l-4 border-orange-500 pl-4">
+                                        <h4 class="font-bold text-gray-800">Can't see table controls</h4>
+                                        <p class="text-gray-600 text-sm">
+                                            ✅ <strong>Solution:</strong> Hover over the table - controls appear on hover.
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="border-l-4 border-yellow-500 pl-4">
+                                        <h4 class="font-bold text-gray-800">Want to undo a mistake</h4>
+                                        <p class="text-gray-600 text-sm">
+                                            ✅ <strong>Solution:</strong> Use the new "Undo Last Action" button in the left panel.
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="border-l-4 border-green-500 pl-4">
+                                        <h4 class="font-bold text-gray-800">Need to delete just the last table</h4>
+                                        <p class="text-gray-600 text-sm">
+                                            ✅ <strong>Solution:</strong> Hover over the table → click the red delete button, or use Undo.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-green-600 mb-4">Best Practices</h3>
+                                
+                                <div class="bg-green-50 p-6 rounded-lg">
+                                    <ul class="space-y-3 text-gray-700">
+                                        <li class="flex items-start">
+                                            <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
+                                            <span><strong>Start with Auto mode</strong> for quick layouts, then switch to Manual for adjustments</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
+                                            <span><strong>Add all parties first</strong> before creating tables for better auto-assignment</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
+                                            <span><strong>Use the CAD background</strong> to align tables with room features</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-1"></i>
+                                            <span><strong>Generate reports early</strong> to catch any assignment issues</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="mt-6 p-4 bg-blue-100 rounded-lg">
+                                    <h4 class="font-bold text-blue-800 mb-2">Need More Help?</h4>
+                                    <p class="text-blue-700 text-sm">
+                                        The system now tracks all your actions and provides undo functionality. 
+                                        Don't be afraid to experiment - you can always undo!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="flex justify-between items-center mt-8">
+                    <button onclick="previousSlide()" class="px-6 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400" id="prevBtn">
+                        <i class="fas fa-chevron-left mr-2"></i>Previous
+                    </button>
+                    <span class="text-gray-600" id="slideIndicator">Slide 1 of 5</span>
+                    <button onclick="nextSlide()" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" id="nextBtn">
+                        Next<i class="fas fa-chevron-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let parties = [];
+        let partyIdCounter = 1;
+        let tableCounter = 1;
+        let selectedParties = [];
+        let currentMode = 'auto';
+        let currentSlide = 1;
+        let draggedElement = null;
+        let dragOffset = { x: 0, y: 0 };
+
+        // Action History System (NEW!)
+        let actionHistory = [];
+        let maxHistorySize = 10;
+
+        // Screen management
+        function showScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenName).classList.add('active');
+        }
+
+        function toggleToAutoMode() {
+            document.querySelector('input[name="assignmentMode"][value="auto"]').checked = true;
+            toggleAssignmentMode();
+        }
+
+        // Action History Functions (NEW!)
+        function addToHistory(action) {
+            actionHistory.push({
+                ...action,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            
+            if (actionHistory.length > maxHistorySize) {
+                actionHistory.shift();
+            }
+            
+            updateActionDisplay();
+            updateUndoButton();
+        }
+
+        function updateActionDisplay() {
+            const actionList = document.getElementById('actionList');
+            if (actionHistory.length === 0) {
+                actionList.innerHTML = '<div class="text-gray-400">No actions yet</div>';
+                return;
+            }
+            
+            const recentActions = actionHistory.slice(-3).reverse();
+            actionList.innerHTML = recentActions.map(action => 
+                `<div class="text-xs">${action.timestamp}: ${action.description}</div>`
+            ).join('');
+        }
+
+        function updateUndoButton() {
+            const undoBtn = document.getElementById('undoBtn');
+            undoBtn.disabled = actionHistory.length === 0;
+        }
+
+        function undoLastAction() {
+            if (actionHistory.length === 0) return;
+            
+            const lastAction = actionHistory.pop();
+            
+            try {
+                switch (lastAction.type) {
+                    case 'addParty':
+                        parties = parties.filter(p => p.id !== lastAction.data.partyId);
+                        updatePartyList();
+                        break;
+                        
+                    case 'removeParty':
+                        parties.push(lastAction.data.party);
+                        updatePartyList();
+                        break;
+                        
+                    case 'addTable':
+                        const table = document.getElementById(lastAction.data.tableId);
+                        if (table) table.remove();
+                        break;
+                        
+                    case 'removeTable':
+                        // Recreate the table
+                        createTableElement(
+                            lastAction.data.tableData.id,
+                            lastAction.data.tableData.x,
+                            lastAction.data.tableData.y,
+                            lastAction.data.tableData.seats,
+                            lastAction.data.tableData.type,
+                            lastAction.data.tableData.size
+                        );
+                        break;
+                        
+                    case 'moveTable':
+                        const movedTable = document.getElementById(lastAction.data.tableId);
+                        if (movedTable) {
+                            movedTable.style.left = lastAction.data.oldPosition.x + 'px';
+                            movedTable.style.top = lastAction.data.oldPosition.y + 'px';
+                        }
+                        break;
+                        
+                    case 'assignParty':
+                        const party = parties.find(p => p.id === lastAction.data.partyId);
+                        if (party) {
+                            party.tableId = lastAction.data.oldTableId;
+                            updatePartyList();
+                        }
+                        break;
+                        
+                    case 'clearAll':
+                        // Restore all data
+                        parties = lastAction.data.parties;
+                        updatePartyList();
+                        
+                        // Restore tables
+                        lastAction.data.tables.forEach(tableData => {
+                            createTableElement(
+                                tableData.id,
+                                tableData.x,
+                                tableData.y,
+                                tableData.seats,
+                                tableData.type,
+                                tableData.size
+                            );
+                        });
+                        break;
+                }
+                
+                updateActionDisplay();
+                updateUndoButton();
+                
+                // Add undo action to history
+                addToHistory({
+                    type: 'undo',
+                    description: `Undid: ${lastAction.description}`,
+                    data: {}
+                });
+                
+            } catch (error) {
+                console.error('Undo failed:', error);
+                alert('Could not undo the last action.');
+            }
+        }
+
+        // Mode management
+        function toggleAssignmentMode() {
+            const autoMode = document.querySelector('input[name="assignmentMode"][value="auto"]').checked;
+            const manualTableOptions = document.getElementById('manualTableOptions');
+            const modeIndicator = document.getElementById('modeIndicator');
+            
+            currentMode = autoMode ? 'auto' : 'manual';
+            
+            if (autoMode) {
+                manualTableOptions.style.display = 'none';
+                modeIndicator.innerHTML = 'Mode: <span class="font-semibold text-green-600">Auto</span>';
+                document.getElementById('autoModeOption').classList.add('selected');
+                document.getElementById('manualModeOption').classList.remove('selected');
+            } else {
+                manualTableOptions.style.display = 'grid';
+                modeIndicator.innerHTML = 'Mode: <span class="font-semibold text-blue-600">Manual</span>';
+                document.getElementById('manualModeOption').classList.add('selected');
+                document.getElementById('autoModeOption').classList.remove('selected');
+                setupDragAndDrop(); // Enable drag and drop for manual mode
+            }
+        }
+
+        // FIXED: Drag and Drop System
+        function setupDragAndDrop() {
+            // Setup drag for table templates
+            document.querySelectorAll('.draggable').forEach(draggable => {
+                draggable.addEventListener('mousedown', startDragFromTemplate);
+            });
+            
+            // Setup drag for existing tables
+            document.querySelectorAll('.table-item').forEach(table => {
+                enableTableDragging(table);
+            });
+        }
+
+        function startDragFromTemplate(e) {
+            if (currentMode !== 'manual') return;
+            
+            e.preventDefault();
+            const template = e.target;
+            
+            // Create new table element
+            const tableType = template.dataset.tableType;
+            const seats = template.dataset.seats;
+            const size = template.dataset.size;
+            
+            // Calculate position relative to room layout
+            const roomLayout = document.getElementById('roomLayout');
+            const rect = roomLayout.getBoundingClientRect();
+            
+            const x = e.clientX - rect.left - 25; // Center the table on cursor
+            const y = e.clientY - rect.top - 25;
+            
+            createTableElement(`table_${tableCounter}`, x, y, seats, tableType, size);
+            
+            addToHistory({
+                type: 'addTable',
+                description: `Added ${tableType} table for ${seats} guests`,
+                data: { tableId: `table_${tableCounter}` }
+            });
+            
+            tableCounter++;
+        }
+
+        function createTableElement(id, x, y, seats, type, size) {
+            const roomLayout = document.getElementById('roomLayout');
+            const newTable = document.createElement('div');
+            
+            newTable.id = id;
+            newTable.classList.add('table-item');
+            if (type === 'rectangular') {
+                newTable.classList.add('table-rectangular');
+            }
+            
+            // Parse size
+            let width, height;
+            if (size.includes('x')) {
+                [width, height] = size.split('x').map(s => parseInt(s));
+            } else {
+                width = height = parseInt(size);
+            }
+            
+            newTable.style.left = x + 'px';
+            newTable.style.top = y + 'px';
+            newTable.style.width = width + 'px';
+            newTable.style.height = height + 'px';
+            newTable.innerHTML = seats;
+            
+            // Add control buttons
+            newTable.innerHTML += `
+                <button class="table-rotation-handle" onclick="rotateTable('${id}')">
+                    <i class="fas fa-redo"></i>
+                </button>
+                <button class="table-resize-handle" onclick="resizeTable('${id}')">
+                    <i class="fas fa-expand-arrows-alt"></i>
+                </button>
+                <button class="table-delete-handle" onclick="deleteTable('${id}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            // Double-click to show assignments
+            newTable.addEventListener('dblclick', () => {
+                const assignedParties = parties.filter(p => p.tableId === id);
+                if (assignedParties.length > 0) {
+                    const partyNames = assignedParties.map(p => `${p.memberName} (${p.totalGuests})`).join(', ');
+                    alert(`${id} assignments:\\n${partyNames}`);
+                } else {
+                    alert(`${id} is unassigned`);
+                }
+            });
+            
+            roomLayout.appendChild(newTable);
+            
+            // Enable dragging for this table
+            enableTableDragging(newTable);
+        }
+
+        function enableTableDragging(table) {
+            table.addEventListener('mousedown', startDrag);
+        }
+
+        function startDrag(e) {
+            if (currentMode !== 'manual') return;
+            if (e.target.classList.contains('table-rotation-handle') || 
+                e.target.classList.contains('table-resize-handle') || 
+                e.target.classList.contains('table-delete-handle')) {
+                return; // Don't drag when clicking control buttons
+            }
+            
+            e.preventDefault();
+            draggedElement = e.currentTarget;
+            
+            const rect = draggedElement.getBoundingClientRect();
+            const roomRect = document.getElementById('roomLayout').getBoundingClientRect();
+            
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+            
+            // Store original position for undo
+            const originalPosition = {
+                x: parseInt(draggedElement.style.left),
+                y: parseInt(draggedElement.style.top)
+            };
+            
+            draggedElement.classList.add('dragging');
+            
+            // Add global mouse event listeners
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+            
+            function drag(e) {
+                if (!draggedElement) return;
+                
+                const roomRect = document.getElementById('roomLayout').getBoundingClientRect();
+                let newX = e.clientX - roomRect.left - dragOffset.x;
+                let newY = e.clientY - roomRect.top - dragOffset.y;
+                
+                // Keep table within bounds
+                const tableWidth = parseInt(draggedElement.style.width);
+                const tableHeight = parseInt(draggedElement.style.height);
+                
+                newX = Math.max(0, Math.min(newX, 800 - tableWidth));
+                newY = Math.max(0, Math.min(newY, 600 - tableHeight));
+                
+                draggedElement.style.left = newX + 'px';
+                draggedElement.style.top = newY + 'px';
+            }
+            
+            function stopDrag(e) {
+                if (!draggedElement) return;
+                
+                const newPosition = {
+                    x: parseInt(draggedElement.style.left),
+                    y: parseInt(draggedElement.style.top)
+                };
+                
+                // Only add to history if position actually changed
+                if (originalPosition.x !== newPosition.x || originalPosition.y !== newPosition.y) {
+                    addToHistory({
+                        type: 'moveTable',
+                        description: `Moved ${draggedElement.id}`,
+                        data: {
+                            tableId: draggedElement.id,
+                            oldPosition: originalPosition,
+                            newPosition: newPosition
+                        }
+                    });
+                }
+                
+                draggedElement.classList.remove('dragging');
+                draggedElement = null;
+                
+                // Remove global listeners
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', stopDrag);
+            }
+        }
+
+        // Table control functions
+        function rotateTable(tableId) {
+            const table = document.getElementById(tableId);
+            const currentTransform = table.style.transform || 'rotate(0deg)';
+            const currentAngle = parseInt(currentTransform.match(/rotate\((-?\d+)deg\)/)?.[1] || 0);
+            const newAngle = (currentAngle + 45) % 360;
+            table.style.transform = `rotate(${newAngle}deg)`;
+            
+            addToHistory({
+                type: 'rotateTable',
+                description: `Rotated ${tableId} to ${newAngle}°`,
+                data: { tableId, oldAngle: currentAngle, newAngle }
+            });
+        }
+
+        function resizeTable(tableId) {
+            const table = document.getElementById(tableId);
+            const currentWidth = parseInt(table.style.width);
+            const currentHeight = parseInt(table.style.height);
+            
+            // Cycle through sizes
+            let newWidth, newHeight;
+            if (currentWidth <= 48) {
+                newWidth = newHeight = 64;
+            } else if (currentWidth <= 64) {
+                newWidth = newHeight = 80;
+            } else if (currentWidth <= 80) {
+                newWidth = newHeight = 96;
+            } else {
+                newWidth = newHeight = 48;
+            }
+            
+            table.style.width = newWidth + 'px';
+            table.style.height = newHeight + 'px';
+            
+            addToHistory({
+                type: 'resizeTable',
+                description: `Resized ${tableId}`,
+                data: { 
+                    tableId, 
+                    oldSize: { width: currentWidth, height: currentHeight },
+                    newSize: { width: newWidth, height: newHeight }
+                }
+            });
+        }
+
+        function deleteTable(tableId) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            // Store table data for undo
+            const tableData = {
+                id: tableId,
+                x: parseInt(table.style.left),
+                y: parseInt(table.style.top),
+                seats: parseInt(table.textContent),
+                type: table.classList.contains('table-rectangular') ? 'rectangular' : 'round',
+                size: `${table.style.width.replace('px', '')}x${table.style.height.replace('px', '')}`
+            };
+            
+            // Unassign any parties from this table
+            parties.forEach(party => {
+                if (party.tableId === tableId) {
+                    party.tableId = null;
+                }
+            });
+            
+            table.remove();
+            updatePartyList();
+            
+            addToHistory({
+                type: 'removeTable',
+                description: `Deleted ${tableId}`,
+                data: { tableData }
+            });
+        }
+
+        // Party management
+        function addParty(event) {
+            event.preventDefault();
+            
+            const memberName = document.getElementById('memberName').value;
+            const totalGuests = parseInt(document.getElementById('totalGuests').value);
+            const adults = parseInt(document.getElementById('adults').value);
+            const children = parseInt(document.getElementById('children').value) || 0;
+            const nonMembers = parseInt(document.getElementById('nonMembers').value) || 0;
+            
+            const party = {
+                id: partyIdCounter++,
+                memberName,
+                totalGuests,
+                adults,
+                children,
+                nonMembers,
+                members: totalGuests - nonMembers,
+                tableId: null
+            };
+            
+            parties.push(party);
+            updatePartyList();
+            clearForm();
+            
+            addToHistory({
+                type: 'addParty',
+                description: `Added party: ${memberName} (${totalGuests} guests)`,
+                data: { partyId: party.id }
+            });
+        }
+
+        function clearForm() {
+            document.getElementById('memberName').value = '';
+            document.getElementById('totalGuests').value = '';
+            document.getElementById('adults').value = '';
+            document.getElementById('children').value = '';
+            document.getElementById('nonMembers').value = '';
+        }
+
+        function updatePartyList() {
+            const listElement = document.getElementById('partyList');
+            const countElement = document.getElementById('partyCount');
+            
+            listElement.innerHTML = '';
+            countElement.textContent = `${parties.length} ${parties.length === 1 ? 'party' : 'parties'}`;
+            
+            parties.forEach(party => {
+                const partyElement = document.createElement('div');
+                partyElement.classList.add('party-item');
+                if (party.tableId) {
+                    partyElement.classList.add('assigned');
+                }
+                
+                partyElement.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="font-semibold text-blue-800">${party.memberName}</div>
+                            <div class="text-sm text-gray-600">
+                                Party: ${party.totalGuests} | Adults: ${party.adults} | Children: ${party.children}
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                Members: ${party.members} | Non-Members: ${party.nonMembers}
+                            </div>
+                            ${party.tableId ? `<div class="text-sm font-medium text-green-600">Table: ${party.tableId}</div>` : ''}
+                        </div>
+                        <button onclick="removeParty(${party.id})" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                listElement.appendChild(partyElement);
+            });
+        }
+
+        function removeParty(partyId) {
+            const party = parties.find(p => p.id === partyId);
+            if (!party) return;
+            
+            parties = parties.filter(p => p.id !== partyId);
+            updatePartyList();
+            
+            addToHistory({
+                type: 'removeParty',
+                description: `Removed party: ${party.memberName}`,
+                data: { party }
+            });
+        }
+
+        // Auto-assignment function
+        function autoAssignParties() {
+            if (parties.length === 0) {
+                alert('Please add parties first!');
+                return;
+            }
+            
+            // Clear existing tables
+            document.querySelectorAll('.table-item').forEach(table => table.remove());
+            
+            // Reset party assignments
+            parties.forEach(party => party.tableId = null);
+            
+            // Smart table placement algorithm
+            const roomLayout = document.getElementById('roomLayout');
+            const roomWidth = 800;
+            const roomHeight = 600;
+            const margin = 50;
+            
+            let currentX = margin;
+            let currentY = margin;
+            let maxRowHeight = 0;
+            let tableNum = 1;
+            
+            // Sort parties by size (largest first for better packing)
+            const sortedParties = [...parties].sort((a, b) => b.totalGuests - a.totalGuests);
+            
+            sortedParties.forEach(party => {
+                const tableSize = party.totalGuests <= 4 ? 60 : 
+                                 party.totalGuests <= 6 ? 80 : 
+                                 party.totalGuests <= 8 ? 100 : 120;
+                
+                // Check if we need to move to next row
+                if (currentX + tableSize + margin > roomWidth) {
+                    currentX = margin;
+                    currentY += maxRowHeight + margin;
+                    maxRowHeight = 0;
+                }
+                
+                // Don't place if we're running out of vertical space
+                if (currentY + tableSize + margin > roomHeight) {
+                    return;
+                }
+                
+                const tableId = `auto_table_${tableNum}`;
+                const tableType = party.totalGuests <= 8 ? 'round' : 'rectangular';
+                
+                createTableElement(tableId, currentX, currentY, party.totalGuests, tableType, `${tableSize}x${tableSize}`);
+                
+                party.tableId = tableId;
+                
+                currentX += tableSize + margin;
+                maxRowHeight = Math.max(maxRowHeight, tableSize);
+                tableNum++;
+            });
+            
+            updatePartyList();
+            
+            addToHistory({
+                type: 'autoAssign',
+                description: `Auto-assigned ${parties.length} parties to tables`,
+                data: { partyCount: parties.length }
+            });
+            
+            alert(`Auto-assignment complete! Created ${tableNum - 1} tables for ${parties.length} parties.`);
+        }
+
+        // Report generation
+        function generateHostessReport() {
+            const reportElement = document.getElementById('hostessReport');
+            const contentElement = document.getElementById('reportContent');
+            
+            const tableMap = new Map();
+            const unassigned = [];
+            
+            parties.forEach(party => {
+                if (party.tableId) {
+                    if (!tableMap.has(party.tableId)) {
+                        tableMap.set(party.tableId, []);
+                    }
+                    tableMap.get(party.tableId).push(party);
+                } else {
+                    unassigned.push(party);
+                }
+            });
+            
+            let html = `
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-blue-800 mb-2">Event Summary</h3>
+                    <p><strong>Total Parties:</strong> ${parties.length}</p>
+                    <p><strong>Total Guests:</strong> ${parties.reduce((sum, p) => sum + p.totalGuests, 0)}</p>
+                    <p><strong>Total Adults:</strong> ${parties.reduce((sum, p) => sum + p.adults, 0)}</p>
+                    <p><strong>Total Children:</strong> ${parties.reduce((sum, p) => sum + p.children, 0)}</p>
+                    <p><strong>Total Members:</strong> ${parties.reduce((sum, p) => sum + p.members, 0)}</p>
+                    <p><strong>Total Non-Members:</strong> ${parties.reduce((sum, p) => sum + p.nonMembers, 0)}</p>
+                </div>
+            `;
+            
+            if (tableMap.size > 0) {
+                html += `<h3 class="text-lg font-bold text-blue-800 mb-4">Table Assignments</h3>`;
+                
+                const sortedTables = Array.from(tableMap.entries()).sort((a, b) => 
+                    a[0].localeCompare(b[0], undefined, { numeric: true })
+                );
+                
+                sortedTables.forEach(([tableId, tableParties]) => {
+                    const totalGuests = tableParties.reduce((sum, p) => sum + p.totalGuests, 0);
+                    
+                    html += `
+                        <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+                            <h4 class="font-bold text-blue-800 mb-2">${tableId} (${totalGuests} guests)</h4>
+                            <div class="grid gap-2">
+                    `;
+                    
+                    tableParties.forEach(party => {
+                        html += `
+                            <div class="bg-white p-2 rounded border">
+                                <strong>${party.memberName}</strong> - Party of ${party.totalGuests}
+                                <div class="text-sm text-gray-600">
+                                    Adults: ${party.adults}, Children: ${party.children}, 
+                                    Members: ${party.members}, Non-Members: ${party.nonMembers}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div></div>`;
+                });
+            }
+            
+            if (unassigned.length > 0) {
+                html += `<h3 class="text-lg font-bold text-red-600 mb-4">Unassigned Parties</h3><div class="grid gap-2 mb-4">`;
+                
+                unassigned.forEach(party => {
+                    html += `
+                        <div class="bg-red-50 p-2 rounded border border-red-200">
+                            <strong>${party.memberName}</strong> - Party of ${party.totalGuests}
+                            <div class="text-sm text-gray-600">
+                                Adults: ${party.adults}, Children: ${party.children}, 
+                                Members: ${party.members}, Non-Members: ${party.nonMembers}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            }
+            
+            contentElement.innerHTML = html;
+            reportElement.style.display = 'block';
+            reportElement.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function clearAll() {
+            if (confirm('Clear all tables and parties? This cannot be undone.')) {
+                // Store current state for undo
+                const currentState = {
+                    parties: [...parties],
+                    tables: Array.from(document.querySelectorAll('.table-item')).map(table => ({
+                        id: table.id,
+                        x: parseInt(table.style.left),
+                        y: parseInt(table.style.top),
+                        seats: parseInt(table.textContent),
+                        type: table.classList.contains('table-rectangular') ? 'rectangular' : 'round',
+                        size: `${table.style.width.replace('px', '')}x${table.style.height.replace('px', '')}`
+                    }))
+                };
+                
+                parties = [];
+                selectedParties = [];
+                tableCounter = 1;
+                updatePartyList();
+                
+                document.querySelectorAll('.table-item').forEach(table => {
+                    table.remove();
+                });
+                
+                document.getElementById('hostessReport').style.display = 'none';
+                
+                addToHistory({
+                    type: 'clearAll',
+                    description: 'Cleared all tables and parties',
+                    data: currentState
+                });
+            }
+        }
+
+        // Utility functions
+        function printLayout() {
+            window.print();
+        }
+
+        function exportData() {
+            const data = {
+                parties,
+                tables: Array.from(document.querySelectorAll('.table-item')).map(table => ({
+                    id: table.id,
+                    x: parseInt(table.style.left),
+                    y: parseInt(table.style.top),
+                    seats: parseInt(table.textContent),
+                    type: table.classList.contains('table-rectangular') ? 'rectangular' : 'round'
+                })),
+                timestamp: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ghyc_seating_data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Training slide management
+        function showSlide(slideNumber) {
+            document.querySelectorAll('.slide').forEach(slide => slide.classList.remove('active'));
+            document.querySelectorAll('[id^="slide"][id$="Btn"]').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-300', 'text-gray-700');
+            });
+            
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            document.getElementById(`slide${slideNumber}Btn`).classList.remove('bg-gray-300', 'text-gray-700');
+            document.getElementById(`slide${slideNumber}Btn`).classList.add('bg-blue-600', 'text-white');
+            
+            currentSlide = slideNumber;
+            document.getElementById('slideIndicator').textContent = `Slide ${slideNumber} of 5`;
+            
+            document.getElementById('prevBtn').disabled = slideNumber === 1;
+            document.getElementById('nextBtn').disabled = slideNumber === 5;
+        }
+
+        function nextSlide() {
+            if (currentSlide < 5) showSlide(currentSlide + 1);
+        }
+
+        function previousSlide() {
+            if (currentSlide > 1) showSlide(currentSlide - 1);
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mode selector event listeners
+            document.querySelectorAll('input[name="assignmentMode"]').forEach(radio => {
+                radio.addEventListener('change', toggleAssignmentMode);
+            });
+            
+            // Initialize mode
+            toggleAssignmentMode();
+            
+            // Initialize action display
+            updateActionDisplay();
+            updateUndoButton();
+        });
+    </script>
+</body>
+</html>
